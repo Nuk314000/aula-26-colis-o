@@ -3,10 +3,12 @@ const World = Matter.World;
 const Bodies = Matter.Bodies;
 const Constraint = Matter.Constraint;
 
-var engine, world, backgroundImg,boat;
+var engine, world, backgroundImg;
 var canvas, angle, tower, ground, cannon;
 var balls = [];
 var boats = [];
+
+var score = 0;
 
 function preload() {
   backgroundImg = loadImage("./assets/background.gif");
@@ -20,6 +22,7 @@ function setup() {
   angleMode(DEGREES)
   angle = 15
 
+
   ground = Bodies.rectangle(0, height - 1, width * 2, 1, { isStatic: true });
   World.add(world, ground);
 
@@ -27,7 +30,6 @@ function setup() {
   World.add(world, tower);
 
   cannon = new Cannon(180, 110, 130, 100, angle);
- 
 }
 
 function draw() {
@@ -36,25 +38,57 @@ function draw() {
 
   Engine.update(engine);
 
- 
-  rect(ground.position.x, ground.position.y, width * 2, 1);
-  
-
   push();
-  imageMode(CENTER);
-  image(towerImage,tower.position.x, tower.position.y, 160, 310);
+  translate(ground.position.x, ground.position.y);
+  fill("brown");
+  rectMode(CENTER);
+  rect(0, 0, width * 2, 1);
   pop();
 
-
+  push();
+  translate(tower.position.x, tower.position.y);
+  rotate(tower.angle);
+  imageMode(CENTER);
+  image(towerImage, 0, 0, 160, 310);
+  pop();
 
   showBoats();
 
   for (var i = 0; i < balls.length; i++) {
     showCannonBalls(balls[i], i);
+    collisionWithBoat(i);
   }
 
   cannon.display();
+
+
 }
+
+// Função para verificar colisão entre uma bola e os barcos
+function collisionWithBoat(index) {
+  // Loop através de todos os barcos no jogo
+  for (var i = 0; i < boats.length; i++) {
+    // Certifica-se de que a bola e o barco existem antes de verificar a colisão
+    if (balls[index] !== undefined && boats[i] !== undefined) {
+      
+      // Verifica se há colisão usando a biblioteca Matter.js
+      var collision = Matter.SAT.collides(balls[index].body, boats[i].body);
+
+      // Se houver colisão
+      if (collision.collided) {
+        // Remove o barco
+        boats[i].remove(i);
+
+        // Remove a bola do mundo
+        Matter.World.remove(world, balls[index].body);
+
+        // Remove a bola da lista de bolas
+        delete balls[index];
+      }
+    }
+  }
+}
+
 
 function keyPressed() {
   if (keyCode === DOWN_ARROW) {
@@ -68,6 +102,9 @@ function keyPressed() {
 function showCannonBalls(ball, index) {
   if (ball) {
     ball.display();
+    if (ball.body.position.x >= width || ball.body.position.y >= height - 50) {
+      ball.remove(index);
+    }
   }
 }
 
@@ -92,7 +129,9 @@ function showBoats() {
         });
 
         boats[i].display();
-      } 
+      } else {
+        boats[i];
+      }
     }
   } else {
     var boat = new Boat(width, height - 60, 170, 170, -60);
